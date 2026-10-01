@@ -69,6 +69,7 @@ const DEFAULT_FILTERS: LayerFilters = {
   fastTravel: true,
   alpha: true,
   effigies: true,
+  effigyTypes: {},
   bounties: true,
   towers: true,
   spawns: true,
@@ -332,15 +333,16 @@ export default function MapView() {
         counts: {
           fastTravel: { found: 0, total: 0 },
           effigies: { found: 0, total: 0 },
-          towers: { found: 0, total: 0, joined: false },
+          effigyTypes: [],
+          towers: { found: 0, total: 0, landmarks: 0, joined: false },
           bounties: 0,
           alphas: 0,
           joined: false,
         },
       };
     }
-    return buildPois(mapData, mapState, playerScope);
-  }, [mapData, mapState, playerScope]);
+    return buildPois(mapData, mapState, playerScope, layer);
+  }, [mapData, mapState, playerScope, layer]);
   const hasBounties = (mapData?.bounties?.length ?? 0) > 0;
 
   // --- Player pins (resolve nicknames from the cached summary). ------------
@@ -706,7 +708,7 @@ export default function MapView() {
     [commitGesture],
   );
 
-  const setFilter = useCallback((key: keyof LayerFilters, on: boolean) => {
+  const setFilter = useCallback((key: Exclude<keyof LayerFilters, "effigyTypes">, on: boolean) => {
     setFilters((f) => ({ ...f, [key]: on }));
   }, []);
 
@@ -798,6 +800,8 @@ export default function MapView() {
                   <FilterPanel
                     filters={filters}
                     setFilter={setFilter}
+                    setEffigyType={(id, on) => setFilters(f => ({ ...f, effigyTypes: { ...f.effigyTypes, [id]: on } }))}
+                    icons={icons}
                     counts={counts}
                     hasBounties={hasBounties}
                     spawnLabel={spawnActive ? (spawnName ?? spawnSpecies) : null}

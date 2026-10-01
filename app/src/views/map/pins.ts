@@ -37,9 +37,12 @@ export interface PoiPin {
   known: boolean;
   /** Alpha only: base species id (for the portrait + dex cross-link). */
   speciesId?: string;
+  /** Effigy item id and icon-manifest key. */
+  effigyId?: string;
+  iconKey?: string;
   /** Alpha only: field-boss level (hover chip). */
   level?: number;
-  /** Fast-travel / bounty / tower display name (null for the unnamed variety). */
+  /** Fast-travel / effigy / bounty / tower display name (null for the unnamed variety). */
   name?: string | null;
 }
 
@@ -50,7 +53,8 @@ export interface PoiPin {
 export interface PoiCounts {
   fastTravel: { found: number; total: number };
   effigies: { found: number; total: number };
-  towers: { found: number; total: number; joined: boolean };
+  effigyTypes: { id: string; name: string; icon: string; found: number; total: number; joined: boolean }[];
+  towers: { found: number; total: number; landmarks: number; joined: boolean };
   bounties: number;
   alphas: number;
   joined: boolean;
@@ -93,7 +97,17 @@ export function buildPois(
   data: MapData,
   state: MapState | null,
   scope: string,
+  layer?: string,
 ): { pins: PoiPin[]; counts: PoiCounts } {
+  if (layer) {
+    data = { ...data,
+      fast_travel: data.fast_travel.filter(p => p.map === layer),
+      effigies: data.effigies.filter(p => p.map === layer),
+      bosses: data.bosses.filter(p => p.map === layer),
+      bounties: data.bounties?.filter(p => p.map === layer),
+      towers: data.towers?.filter(p => p.map === layer),
+    };
+  }
   const players = state?.players ?? [];
   const unlockedFt = unionFlags(players, scope, (p) => p.fast_travel_unlocked);
   const foundEff = unionFlags(players, scope, (p) => p.effigies_found);
@@ -115,6 +129,8 @@ export function buildPois(
   const pins: PoiPin[] = [];
   let ftFound = 0;
   let effFound = 0;
+  const definitions = new Map((data.effigy_types ?? []).map(e => [e.id, e]));
+  const effigyTypes = new Map<string, PoiCounts["effigyTypes"][number]>();
 
   data.fast_travel.forEach((p, i) => {
     const found = p.guid != null && unlockedFt.has(p.guid);
@@ -134,6 +150,19 @@ export function buildPois(
   data.effigies.forEach((p, i) => {
     const found = p.guid != null && foundEff.has(p.guid);
     if (found) effFound++;
+    const id = p.item_id ?? "Relic";
+    const type = definitions.get(id) ?? {
+      id, name: id === "Relic" ? "Lifmunk Effigy" : id,
+      icon: id === "Relic" ? "effigy" : `effigy_${id}`,
+    };
+    let count = effigyTypes.get(id);
+    if (!count) {
+      count = { ...type, found: 0, total: 0, joined: false };
+      effigyTypes.set(id, count);
+    }
+    count.total++;
+    if (found) count.found++;
+    if (p.guid != null) count.joined = true;
     pins.push({
       key: `ef${i}`,
       kind: "effigy",
@@ -142,6 +171,9 @@ export function buildPois(
       y: p.y,
       found,
       known: found,
+      effigyId: id,
+      iconKey: type.icon,
+      name: type.name,
     });
   });
 
@@ -216,6 +248,7 @@ export function buildPois(
         : Math.min(foundEff.size, data.effigies.length),
       total: data.effigies.length,
     },
+    effigyTypes: [...effigyTypes.values()].sort((a, b) => a.id.localeCompare(b.id)),
     towers: {
       // With keys, "found" = towers a scoped player has reached and "total" is
       // the trackable (keyed) tower count — keyless towers are excluded so the
@@ -225,6 +258,7 @@ export function buildPois(
         ? towerFound
         : Math.min(conqueredTowers.size, towers.length),
       total: hasTowerKeys ? keyedTowers : towers.length,
+      landmarks: towers.length,
       joined: hasTowerKeys,
     },
     bounties: bounties.length,
@@ -233,4 +267,16 @@ export function buildPois(
   };
 
   return { pins, counts };
+}
+
+/** Effigy visibility is shared by the renderer and its regression tests. Unlisted types
+ * default to visible so an existing saved filter does not hide newly extracted variants. */
+export function isEffigyVisible(pin: PoiPin, filters: {
+  effigies: boolean;
+  hideUnfoundEffigies: boolean;
+  effigyTypes?: Record<string, boolean>;
+}): boolean {
+  return filters.effigies
+    && filters.effigyTypes?.[pin.effigyId ?? "Relic"] !== false
+    && (!filters.hideUnfoundEffigies || pin.found);
 }

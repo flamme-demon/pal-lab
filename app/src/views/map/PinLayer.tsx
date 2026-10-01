@@ -43,7 +43,7 @@ import {
   type IconManifest,
 } from "./icons";
 import { alphaIconUrl, palIconUrl, UNKNOWN_ICON } from "../../lib/assets";
-import type { PoiPin } from "./pins";
+import { isEffigyVisible, type PoiPin } from "./pins";
 
 /** Per-layer visibility toggles (persisted by MapView). `hideUnfoundEffigies`
  *  is a spoiler modifier on the effigy layer, not a layer of its own. */
@@ -51,6 +51,8 @@ export interface LayerFilters {
   fastTravel: boolean;
   alpha: boolean;
   effigies: boolean;
+  /** Unlisted item ids default to visible (legacy saved filters). */
+  effigyTypes?: Record<string, boolean>;
   bounties: boolean;
   towers: boolean;
   spawns: boolean;
@@ -242,20 +244,21 @@ function PinTypeIcon({
     );
   }
   if (pin.kind === "effigy") {
-    // Real green Lifmunk statuette (colored art) on a chip: unfound = full color
+    // The collected item's own statuette (colored art) on a chip: unfound = full color
     // + faint green glow (actionable); found = grayscale + dimmed, NO badge (the
     // dimming + tooltip carry the state; a ✓ badge read as "the icon is a check").
-    const entry = icons?.effigy ?? null;
+    const iconKey = pin.iconKey ?? "effigy";
+    const entry = icons?.[iconKey] ?? null;
     return (
       <GlyphChip
         src={entry ? iconUrl(entry) : fallbackIcon("effigy", pin.found ? DIM : GREEN)}
-        mono={isMonoIcon(icons, "effigy")}
+        mono={isMonoIcon(icons, iconKey)}
         tint={GREEN}
         size={ALPHA_SIZE}
         grayscale={pin.found}
         dim={pin.found ? 0.45 : 1}
         glow={pin.found ? undefined : GREEN}
-        title={pin.found ? "Lifmunk Effigy · collected" : "Lifmunk Effigy"}
+        title={pin.found ? `${pin.name ?? "Lifmunk Effigy"} · collected` : pin.name ?? "Lifmunk Effigy"}
       />
     );
   }
@@ -477,11 +480,7 @@ function PinLayer({
       if (pin.map !== layer) continue;
       if (pin.kind === "fast_travel" && !filters.fastTravel) continue;
       if (pin.kind === "alpha" && !filters.alpha) continue;
-      if (pin.kind === "effigy" && !filters.effigies) continue;
-      // Spoiler modifier: hide effigies the scoped player hasn't collected, even
-      // in revealed terrain (the location itself is the spoiler).
-      if (pin.kind === "effigy" && filters.hideUnfoundEffigies && !pin.found)
-        continue;
+      if (pin.kind === "effigy" && !isEffigyVisible(pin, filters)) continue;
       if (pin.kind === "bounty" && !filters.bounties) continue;
       if (pin.kind === "tower" && !filters.towers) continue;
       const [u, v] = worldToPx(entry, pin.x, pin.y);

@@ -44,6 +44,105 @@
     "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic",
     "mono": false
   },
+  "effigy_Relic_01": {
+    "file": "effigy_Relic_01.png",
+    "px": [
+      256,
+      256
+    ],
+    "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic_01",
+    "mono": false
+  },
+  "effigy_Relic_02": {
+    "file": "effigy_Relic_02.png",
+    "px": [
+      256,
+      256
+    ],
+    "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic_02",
+    "mono": false
+  },
+  "effigy_Relic_03": {
+    "file": "effigy_Relic_03.png",
+    "px": [
+      256,
+      256
+    ],
+    "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic_03",
+    "mono": false
+  },
+  "effigy_Relic_04": {
+    "file": "effigy_Relic_04.png",
+    "px": [
+      256,
+      256
+    ],
+    "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic_04",
+    "mono": false
+  },
+  "effigy_Relic_05": {
+    "file": "effigy_Relic_05.png",
+    "px": [
+      256,
+      256
+    ],
+    "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic_05",
+    "mono": false
+  },
+  "effigy_Relic_06": {
+    "file": "effigy_Relic_06.png",
+    "px": [
+      256,
+      256
+    ],
+    "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic_06",
+    "mono": false
+  },
+  "effigy_Relic_07": {
+    "file": "effigy_Relic_07.png",
+    "px": [
+      256,
+      256
+    ],
+    "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic_07",
+    "mono": false
+  },
+  "effigy_Relic_08": {
+    "file": "effigy_Relic_08.png",
+    "px": [
+      256,
+      256
+    ],
+    "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic_08",
+    "mono": false
+  },
+  "effigy_Relic_09": {
+    "file": "effigy_Relic_09.png",
+    "px": [
+      256,
+      256
+    ],
+    "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic_09",
+    "mono": false
+  },
+  "effigy_Relic_10": {
+    "file": "effigy_Relic_10.png",
+    "px": [
+      256,
+      256
+    ],
+    "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic_10",
+    "mono": false
+  },
+  "effigy_Relic_11": {
+    "file": "effigy_Relic_11.png",
+    "px": [
+      256,
+      256
+    ],
+    "source": "Pal/Content/Others/InventoryItemIcon/Texture/T_itemicon_Relic_11",
+    "mono": false
+  },
   "fast_travel": {
     "file": "fast_travel.png",
     "px": [

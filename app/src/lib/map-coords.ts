@@ -78,6 +78,8 @@ export interface PoiPoint {
    *  `BOSS_`-prefixed). Bounty names are procedural (always null), so the UI
    *  humanizes this into an enemy-type label. Absent on fast-travel/effigy. */
   cid?: string | null;
+  /** Effigy item id (Relic, Relic_01, ...); absent on legacy Lifmunk-only maps. */
+  item_id?: string;
 }
 
 /** A syndicate-tower landmark POI (Map Wave 3). Towers are major in-game
@@ -104,6 +106,8 @@ export interface MapData {
   spawns: SpawnEntry[];
   bosses: BossEntry[];
   effigies: PoiPoint[];
+  /** Placed effigy types, with names and icon keys extracted from game items. */
+  effigy_types?: { id: string; name: string; icon: string }[];
   fast_travel: PoiPoint[];
   bounties?: PoiPoint[];
   /** Syndicate-tower landmarks (Map Wave 3, TowerData/T1). Absent on data
