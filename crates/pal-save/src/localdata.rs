@@ -223,6 +223,19 @@ fn parse_player_body_map(r: &mut Reader) -> Result<PlayerMapRecord, SaveError> {
 fn fill_record(rec: &mut PlayerMapRecord, props: &[(String, Value)]) {
     rec.fast_travel_unlocked = true_keys(props, "FastTravelPointUnlockFlag");
     rec.effigies_found = true_keys(props, "RelicObtainForInstanceFlag");
+    // Newer saves group all effigy variants by relic type. Keep legacy flags
+    // too: migration can leave both representations present in the same save.
+    if let Some(groups) =
+        gvas::find(props, "RelicObtainForInstanceFlagByType").and_then(Value::as_array)
+    {
+        for group in groups {
+            if let Some(flags) = group.as_props() {
+                rec.effigies_found.extend(true_keys(flags, "Flags"));
+            }
+        }
+    }
+    rec.effigies_found.sort();
+    rec.effigies_found.dedup();
     rec.effigy_possess_num = gvas::find(props, "RelicPossessNum")
         .and_then(Value::as_i32)
         .unwrap_or(0);
@@ -256,6 +269,60 @@ fn true_keys(props: &[(String, Value)], name: &str) -> Vec<String> {
 mod tests {
     use super::*;
     use crate::compress::decompress_sav;
+
+    fn flags(entries: &[(&str, bool)]) -> Value {
+        Value::Map(
+            entries
+                .iter()
+                .map(|(k, v)| (Value::Name(k.to_string()), Value::Bool(*v)))
+                .collect(),
+        )
+    }
+
+    #[test]
+    fn effigy_flags_merge_legacy_and_typed_groups() {
+        let props = vec![
+            (
+                "RelicObtainForInstanceFlag".into(),
+                flags(&[("OLD", true), ("NO", false)]),
+            ),
+            (
+                "RelicObtainForInstanceFlagByType".into(),
+                Value::Array(vec![
+                    Value::Props(vec![(
+                        "Flags".into(),
+                        flags(&[("OLD", true), ("LAMBALL", true)]),
+                    )]),
+                    Value::Props(vec![(
+                        "Flags".into(),
+                        flags(&[("CATTIVA", true), ("NO", false)]),
+                    )]),
+                    Value::Props(vec![]),
+                ]),
+            ),
+        ];
+        let mut rec = PlayerMapRecord::default();
+        fill_record(&mut rec, &props);
+        assert_eq!(rec.effigies_found, vec!["CATTIVA", "LAMBALL", "OLD"]);
+    }
+
+    #[test]
+    fn typed_effigies_work_without_legacy_flags() {
+        let mut rec = PlayerMapRecord::default();
+        fill_record(
+            &mut rec,
+            &[(
+                "RelicObtainForInstanceFlagByType".into(),
+                Value::Array(vec![Value::Props(vec![(
+                    "Flags".into(),
+                    flags(&[("NEW", true)]),
+                )])]),
+            )],
+        );
+        assert_eq!(rec.effigies_found, vec!["NEW"]);
+        fill_record(&mut rec, &[]);
+        assert!(rec.effigies_found.is_empty());
+    }
 
     fn load(name: &str) -> Vec<u8> {
         let path = format!(

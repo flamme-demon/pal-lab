@@ -335,8 +335,8 @@ export default function MapView() {
           effigies: { found: 0, total: 0 },
           effigyTypes: [],
           towers: { found: 0, total: 0, landmarks: 0, joined: false },
-          bounties: 0,
-          alphas: 0,
+          bounties: { found: 0, total: 0, joined: false },
+          alphas: { found: 0, total: 0, joined: false },
           joined: false,
         },
       };

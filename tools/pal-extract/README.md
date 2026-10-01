@@ -87,7 +87,8 @@ and exits non-zero if any fail.
     with level/count ranges, `time` (`day`/`night`/null), `weather` (raw or null), and a `boss` flag
     (`SpawnerType==FieldBoss`). NPC-only slots and non-species `Pal` values (e.g. `RowName`) are dropped.
   - `bosses`: `DT_BossSpawnerLoactionData` rows with a real pal `CharacterID` (rows for human/NPC
-    bosses carry no `CharacterID` and are excluded).
+    bosses carry no `CharacterID` and are excluded). Each entry includes the table's
+    `SpawnerID` as `key`, joined exactly against `NormalBossDefeatFlag`.
   - `effigies` / `fast_travel`: a World-Partition actor sweep of `Pal/Content/Pal/Maps/MainWorld_5`
     (~10k cells, ~60s) for `BP_LevelObject_Relic_C`, its `BP_LevelObject_Relic_<CharacterID>_C`
     variants, and `BP_LevelObject_TowerFastTravelPoint_C`, each
@@ -170,7 +171,13 @@ Rooby, Herbil, Tanzee, Depresso and Cattiva (30 each); Lunaris, Relaxaurus and
 Yakumo (4 each). The Mimog item exists in the game's item table but has no
 placed relic actor and is therefore not emitted as a map pin. All 407 placed
 effigies have distinct non-null UE-Digits GUIDs. Existing world bounds, image
-orientation and player-GUID joins are preserved. Field bosses (90 entries) and
+orientation and player-GUID joins are preserved. The save reader merges legacy
+`RelicObtainForInstanceFlag` flags with every `Flags` map in
+`RelicObtainForInstanceFlagByType`, deduplicating GUIDs. Alpha and bounty pins
+use `NormalBossDefeatFlag` keys (`SpawnerID` and blueprint `SaveKeyName`,
+respectively), with defeated/total counters scoped to the player and map.
+The game reuses the GrassGolem spawner key for two locations; both reflect
+that shared save flag. Missing keys remain neutral. Field bosses (90 entries) and
 species spawn data (542 species/map groups) are also re-extracted.
 
 This audit covers the map's existing POI categories. Dungeon entrances, ruins,

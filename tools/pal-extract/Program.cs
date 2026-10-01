@@ -922,7 +922,7 @@ static class Program
 
         // ---- (d) bosses: DT_BossSpawnerLoactionData ----
         var bossTable = provider.LoadPackageObject<UDataTable>("Pal/Content/Pal/DataTable/UI/DT_BossSpawnerLoactionData");
-        var bosses = new List<(string species, double x, double y, int level)>();
+        var bosses = new List<(string species, double x, double y, int level, string key)>();
         int bossEmptyCid = 0; var bossEmptySamples = new List<string>();
         foreach (var r in bossTable.RowMap)
         {
@@ -930,7 +930,7 @@ static class Program
             var cid = S(v, "CharacterID");
             if (string.IsNullOrEmpty(cid) || cid == "None") { bossEmptyCid++; if (bossEmptySamples.Count < 8) bossEmptySamples.Add(S(v, "SpawnerID") ?? r.Key.Text); continue; }
             var loc = r.Value.GetOrDefault<FVector>("Location");
-            bosses.Add((cid, loc.X, loc.Y, I(v, "Level")));
+            bosses.Add((cid, loc.X, loc.Y, I(v, "Level"), S(v, "SpawnerID")));
         }
         Console.WriteLine($"[bosses] rows={bossTable.RowMap.Count} emitted={bosses.Count} emptyCharacterID={bossEmptyCid} distinctSpecies={bosses.Select(b => b.species).Distinct().Count()}");
         if (bossEmptySamples.Count > 0) Console.WriteLine($"[bosses] empty-CID SpawnerIDs (sample): {string.Join(", ", bossEmptySamples)}");
@@ -1094,7 +1094,7 @@ static class Program
         Console.WriteLine($"[calibrate] WINNER uIsY={best.uIsY} uFlip={best.uFlip} vFlip={best.vFlip} landHit={bestScore:P1} (runner-up {secondScore:P1}, separation {bestScore / Math.Max(secondScore, 0.001):F2}x)");
         var formula = BuildFormula(best.uIsY, best.uFlip, best.vFlip);
         Console.WriteLine($"[calibrate] world_to_px = {formula}");
-        RenderCalibration(worldBmp, main, best, bosses, fastTravel, effigies.Select(e => (e.x, e.y, e.z, e.guid)).ToList(), Path.Combine(probeDir, "calibration.png"));
+        RenderCalibration(worldBmp, main, best, bosses.Select(b => (b.species, b.x, b.y, b.level)).ToList(), fastTravel, effigies.Select(e => (e.x, e.y, e.z, e.guid)).ToList(), Path.Combine(probeDir, "calibration.png"));
         worldBmp.Dispose();
 
         // ---- assign every point to a map layer (Tree first: more specific), build JSON ----
@@ -1131,7 +1131,7 @@ static class Program
         {
             var m = AssignMap(b.x, b.y);
             if (m == null) { bossDropped++; continue; }
-            bossesOut.Add(new { species = b.species, x = Math.Round(b.x, 3), y = Math.Round(b.y, 3), level = b.level, map = m });
+            bossesOut.Add(new { species = b.species, x = Math.Round(b.x, 3), y = Math.Round(b.y, 3), level = b.level, map = m, key = b.key });
         }
         var effigiesOut = new List<object>();
         int effigyDropped = 0;
@@ -1156,7 +1156,7 @@ static class Program
             var m = AssignMap(b.x, b.y);
             if (m == null) { bountyDropped++; continue; }
             // name is procedural (assigned from a pool at spawn) -> null per contract X1; cid = the
-            // humanoid boss CharacterID (grounded enemy-type metadata for the pin hover).
+            // humanoid boss SaveKeyName (victory join key and enemy-type metadata).
             bountiesOut.Add(new { x = Math.Round(b.x, 3), y = Math.Round(b.y, 3), map = m, name = (string)null, cid = b.cid });
         }
         var towersOut = new List<object>();

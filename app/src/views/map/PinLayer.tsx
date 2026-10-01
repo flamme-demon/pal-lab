@@ -297,7 +297,9 @@ function PinTypeIcon({
       mono={isMonoIcon(icons, "bounty")}
       tint={PURPLE}
       size={56}
-      title={pin.name ? `Bounty · ${pin.name}` : "Bounty"}
+      grayscale={pin.found}
+      dim={pin.found ? 0.45 : 1}
+      title={`Bounty${pin.found ? " · defeated" : ""}${pin.name ? ` · ${pin.name}` : ""}`}
     />
   );
 }
@@ -307,16 +309,18 @@ function PinTypeIcon({
 function AlphaPortrait({
   speciesId,
   size,
+  found,
 }: {
   speciesId: string | null;
   size: number;
+  found: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const src = speciesId && !failed ? palIconUrl(speciesId) : UNKNOWN_ICON;
   return (
     <span
       className="block overflow-hidden rounded-full bg-abyss/70 ring-2 ring-abyss shadow-[0_1px_4px_rgba(0,0,0,0.6)] transition-[box-shadow,transform] group-hover:-translate-y-0.5 group-hover:ring-amber/80"
-      style={{ width: size, height: size }}
+      style={{ width: size, height: size, filter: found ? "grayscale(1)" : undefined, opacity: found ? 0.45 : 1 }}
     >
       <img
         src={src}
@@ -334,7 +338,7 @@ function AlphaPortrait({
 }
 
 /** The species-mode PalHoverCard context strip for an alpha pin. */
-function AlphaNote({ level }: { level?: number }) {
+function AlphaNote({ level, found }: { level?: number; found: boolean }) {
   return (
     <span className="flex items-center gap-1.5">
       <img
@@ -347,6 +351,7 @@ function AlphaNote({ level }: { level?: number }) {
         className="h-[13px] w-[13px] shrink-0 object-contain"
       />
       <span className="font-semibold text-amber-bright">Alpha Pal</span>
+      {found && <span className="text-ink">· Defeated</span>}
       {level != null && (
         <>
           <span className="text-ink-faint">·</span>
@@ -382,10 +387,10 @@ function AlphaPin({
       onClick={() => pin.speciesId && onOpenSpecies(pin.speciesId)}
       className="group pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
       style={{ left, top }}
-      aria-label={`Alpha Pal${pin.level != null ? `, level ${pin.level}` : ""}`}
+      aria-label={`Alpha Pal${pin.level != null ? `, level ${pin.level}` : ""}${pin.found ? " · Defeated" : ""}`}
     >
       <span className="relative block transition-transform duration-150 ease-out" style={ZOOM_STYLE}>
-        <AlphaPortrait speciesId={pin.speciesId ?? null} size={ALPHA_SIZE} />
+        <AlphaPortrait speciesId={pin.speciesId ?? null} size={ALPHA_SIZE} found={pin.found} />
         {badgeSrc && (
           <span
             aria-hidden
@@ -406,7 +411,7 @@ function AlphaPin({
   // bare (still clickable) pin if it is somehow missing rather than crash.
   if (!pin.speciesId) return button;
   return (
-    <PalHoverCard speciesId={pin.speciesId} note={<AlphaNote level={pin.level} />}>
+    <PalHoverCard speciesId={pin.speciesId} note={<AlphaNote level={pin.level} found={pin.found} />}>
       {button}
     </PalHoverCard>
   );

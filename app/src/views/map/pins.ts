@@ -21,12 +21,9 @@ import { baseSpeciesId } from "../../lib/map-data";
 
 export type PoiKind = "fast_travel" | "alpha" | "effigy" | "bounty" | "tower";
 
-/** One resolved POI pin in world space. `found` is meaningful only for
- *  fast-travel (unlocked), effigies (collected), and towers (conquered); it
- *  stays false for alpha / bounty pins (no per-pin discovered state in scope)
- *  and whenever the pin has no id to match. `known` gates the fog spoiler rule:
- *  an unlocked fast-travel, a found effigy, or a tower (a landmark visible from
- *  the start) is already known to the player, so it shows through fog. */
+/** One resolved POI pin. `found` means unlocked, collected, or defeated;
+ * towers retain their area-reached semantics. Missing save join keys stay
+ * neutral. Completed POIs are known and can show through fog. */
 export interface PoiPin {
   key: string;
   kind: PoiKind;
@@ -55,14 +52,14 @@ export interface PoiCounts {
   effigies: { found: number; total: number };
   effigyTypes: { id: string; name: string; icon: string; found: number; total: number; joined: boolean }[];
   towers: { found: number; total: number; landmarks: number; joined: boolean };
-  bounties: number;
-  alphas: number;
+  bounties: { found: number; total: number; joined: boolean };
+  alphas: { found: number; total: number; joined: boolean };
   joined: boolean;
 }
 
 /** Union the scoped players' flag arrays into one Set. `scope` is a player uid
- *  hex or `"all"` (every player's flags unioned). Flag keys are already the
- *  32-char UPPERCASE hex the pak guids are matched against — no normalization. */
+ *  hex or `"all"` (every player's flags unioned). Keys are compared exactly:
+ *  actor GUIDs for collectibles, spawner names for boss victories. */
 function unionFlags(
   players: MapState["players"],
   scope: string,
@@ -111,6 +108,7 @@ export function buildPois(
   const players = state?.players ?? [];
   const unlockedFt = unionFlags(players, scope, (p) => p.fast_travel_unlocked);
   const foundEff = unionFlags(players, scope, (p) => p.effigies_found);
+  const defeated = unionFlags(players, scope, (p) => p.bosses_defeated ?? []);
   // `towers_defeated` is an additive MapPlayerState field (TowerData/T1). Read
   // it through a checked guard so this degrades cleanly both before the type
   // lands and against older save states that predate the field.
@@ -120,7 +118,7 @@ export function buildPois(
       : [],
   );
 
-  // The join is "live" only when the extractor has stamped guids onto the POIs
+  // The GUID join is "live" only when the extractor has stamped guids onto the POIs
   // (R1). Absent guids everywhere => degrade to counts-only + neutral pins.
   const hasFtGuids = data.fast_travel.some((p) => p.guid != null);
   const hasEffGuids = data.effigies.some((p) => p.guid != null);
@@ -177,30 +175,36 @@ export function buildPois(
     });
   });
 
+  let alphaFound = 0;
   data.bosses.forEach((b, i) => {
+    const found = b.key != null && defeated.has(b.key);
+    if (found) alphaFound++;
     pins.push({
       key: `bs${i}`,
       kind: "alpha",
       map: b.map,
       x: b.x,
       y: b.y,
-      found: false,
-      known: false,
+      found,
+      known: found,
       speciesId: baseSpeciesId(b.species),
       level: b.level,
     });
   });
 
   const bounties = data.bounties ?? [];
+  let bountyFound = 0;
   bounties.forEach((p, i) => {
+    const found = p.cid != null && defeated.has(p.cid);
+    if (found) bountyFound++;
     pins.push({
       key: `bt${i}`,
       kind: "bounty",
       map: p.map,
       x: p.x,
       y: p.y,
-      found: false,
-      known: false,
+      found,
+      known: found,
       name: p.name ?? (p.cid ? humanizeCid(p.cid) : null),
     });
   });
@@ -261,8 +265,8 @@ export function buildPois(
       landmarks: towers.length,
       joined: hasTowerKeys,
     },
-    bounties: bounties.length,
-    alphas: data.bosses.length,
+    bounties: { found: bountyFound, total: bounties.length, joined: bounties.some(p => p.cid != null) },
+    alphas: { found: alphaFound, total: data.bosses.length, joined: data.bosses.some(p => p.key != null) },
     joined,
   };
 

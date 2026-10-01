@@ -101,3 +101,38 @@ test("map audit keeps all World Tree towers and trader-type wanted targets", () 
   expect(tree.counts.towers.joined).toBe(false);
   expect(tree.pins.filter(p => p.kind === "tower").every(p => p.known && !p.found)).toBe(true);
 });
+
+test("alpha and bounty victories join exact spawner keys for the selected player", () => {
+  const map: MapData = { ...data, effigies: [], bosses: [
+    { species: "BOSS_SheepBall", key: "SPAWNER_A", x: 1, y: 2, level: 10, map: "MainMap" },
+    { species: "BOSS_SheepBall", key: "SPAWNER_B", x: 3, y: 4, level: 20, map: "Tree" },
+    { species: "BOSS_SheepBall", x: 5, y: 6, level: 30, map: "MainMap" },
+  ], bounties: [
+    { cid: "BOSS_Male_Trader01", x: 1, y: 2, map: "MainMap" },
+    { cid: "BOSS_DarkTrader", x: 3, y: 4, map: "MainMap" },
+  ] };
+  const one = player("one", []), two = player("two", []);
+  one.bosses_defeated = ["SPAWNER_A", "BOSS_Male_Trader01", "BOSS_SheepBall", "unknown"];
+  two.bosses_defeated = ["SPAWNER_A", "SPAWNER_B", "BOSS_DarkTrader"];
+  const saves: MapState = { ...state, players: [one, two] };
+  const scoped = buildPois(map, saves, "one");
+  expect(scoped.counts.alphas).toEqual({ found: 1, total: 3, joined: true });
+  expect(scoped.counts.bounties).toEqual({ found: 1, total: 2, joined: true });
+  expect(scoped.pins.map(p => [p.found, p.known])).toEqual([
+    [true, true], [false, false], [false, false], [true, true], [false, false],
+  ]);
+  expect(buildPois(map, saves, "all").counts.alphas.found).toBe(2);
+  expect(buildPois(map, saves, "all").counts.bounties.found).toBe(2);
+  expect(buildPois(map, saves, "one", "Tree").counts.alphas).toEqual({ found: 0, total: 1, joined: true });
+  expect(buildPois(map, null, "all").counts.alphas.found).toBe(0);
+  expect(buildPois({ ...map, bosses: map.bosses.map(b => ({ ...b, key: undefined })) }, saves, "all").counts.alphas.joined).toBe(false);
+});
+
+test("published alpha locations carry game save spawner IDs", () => {
+  const map = extracted as MapData;
+  expect(map.bosses).toHaveLength(90);
+  expect(map.bosses.every(b => !!b.key)).toBe(true);
+  expect(new Set(map.bosses.map(b => b.key)).size).toBe(89);
+  // The game reuses the GrassGolem spawner key across MainMap and Tree.
+  expect(map.bosses.filter(b => b.key === "remainsIsland_1_GrassGolem_FBOSS")).toHaveLength(2);
+});

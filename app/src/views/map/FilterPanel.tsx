@@ -114,7 +114,8 @@ export default function FilterPanel({
         on={filters.alpha}
         onToggle={() => setFilter("alpha", !filters.alpha)}
         label="Alpha Pals"
-        count={String(counts.alphas)}
+        count={counts.alphas.joined ? `${counts.alphas.found}/${counts.alphas.total}` : String(counts.alphas.total)}
+        countTitle={counts.alphas.joined ? "Defeated / total" : "Per-pin match unavailable"}
       />
       <Row
         on={filters.effigies}
@@ -176,7 +177,8 @@ export default function FilterPanel({
           on={filters.bounties}
           onToggle={() => setFilter("bounties", !filters.bounties)}
           label="Bounties"
-          count={String(counts.bounties)}
+          count={counts.bounties.joined ? `${counts.bounties.found}/${counts.bounties.total}` : String(counts.bounties.total)}
+          countTitle={counts.bounties.joined ? "Defeated / total" : "Per-pin match unavailable"}
         />
       )}
       {tw.landmarks > 0 && (

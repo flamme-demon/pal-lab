@@ -54,6 +54,8 @@ export interface SpawnEntry {
 /** A field-boss (alpha) location. `species` is `BOSS_<Internal>` (strip the
  *  case-insensitive `BOSS_` prefix for the pal-icon / dex id). */
 export interface BossEntry {
+  /** SpawnerID, matched exactly against NormalBossDefeatFlag. */
+  key?: string | null;
   species: string;
   x: number;
   y: number;
