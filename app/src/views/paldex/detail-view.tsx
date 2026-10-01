@@ -185,7 +185,7 @@ function FoodMeter({ amount }: { amount: number }) {
 }
 
 /** One work suitability as a prominent chip: glyph, label, a level pip meter,
- * and the level as the loud amber numeral (palpedia rec #1 — levels prominent). */
+ * and the level as the loud amber numeral (levels prominent). */
 function WorkSuitChip({
   kind,
   label,

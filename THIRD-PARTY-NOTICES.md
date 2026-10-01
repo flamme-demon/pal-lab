@@ -155,21 +155,15 @@ Palworld and all related data, names, and artwork are © Pocketpair, Inc. Pal La
 is an unofficial fan tool and is not affiliated with or endorsed by Pocketpair.
 
 
-## French game terminology — Pocketpair / Palpedia reference
+## French game terminology — Palworld / Pocketpair
 
 The display dictionaries in `app/src/i18n/game-fr.json` and
-`game-ids-fr.json` use Palworld game names and localized descriptions referenced
-from Palpedia.com on 2026-09-30 (game data v1.0.4):
-
-- https://palpedia.com/fr/pals
-- https://palpedia.com/fr/passive-skills
-- https://palpedia.com/fr/skills
-- https://palpedia.com/fr/partner-skills
-- https://palpedia.com/fr/items
+`game-ids-fr.json` provide French names and descriptions corresponding to
+Palworld's in-game terminology (reference game data v1.0.4, 2026-09-30).
 
 Entries are matched by stable internal IDs, catalogue IDs or identical species
 slugs. The current pack's English names are retained in all save and solver
 contracts. Ambiguous partner rank templates have manual French translations
-with unchanged numeric slots. Palpedia's editorial guides, site code, images
-and design are not incorporated. Game strings belong to Pocketpair, Inc.
-This reference material is not relicensed as MIT; no endorsement is implied.
+with unchanged numeric slots. Game strings belong to Pocketpair, Inc.
+This reference material is not relicensed as MIT; no endorsement or permission
+to reuse is implied.

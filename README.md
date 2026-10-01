@@ -74,8 +74,8 @@ cakes, lab research (incubation acceleration), and egg-hatch time scanned from
 your world options, all composing into the solver's effort math.
 
 **Languages** — English and French, selectable in the sidebar. The choice is
-remembered locally. French game names and descriptions use the terminology
-referenced from Palpedia; searches accept both languages and ignore accents.
+remembered locally. Game names and descriptions use French in-game terminology; searches accept
+both languages and ignore accents.
 
 ## Desktop vs Web
 

@@ -3,7 +3,7 @@
 The sidebar language selector changes the UI without remounting views. Its
 choice is stored in `pal-lab.language`. A French browser initially uses French;
 other browser languages fall back to English. Both dictionaries ship with the
-app, with no runtime calls to Palpedia or a translation service.
+app, with no runtime calls to external catalogues or translation services.
 
 - `ui-fr.json`: French translations of English UI strings.
 - `game-fr.json`: localized game display names, descriptions and rank templates.
@@ -24,9 +24,9 @@ identical species slugs, then add aliases for the current pack's display names.
 Preserve every numbered slot in partner rank templates, including repeated
 slots. The unit test checks these against the bundled game pack.
 
-French game terminology was referenced from Palpedia on 2026-09-30. Source
-links and attribution are in the root `THIRD-PARTY-NOTICES.md`. Palpedia's
-editorial guides, site code and artwork are not included.
+French names and descriptions correspond to Palworld’s in-game terminology.
+The reference snapshot dates from 2026-09-30. Rights attribution is in the root
+`THIRD-PARTY-NOTICES.md`.
 
 Validation from `app/`:
 

@@ -18,7 +18,7 @@ test("language switch translates menus and preserves unknown user text", () => {
   setLocale(previous);
 });
 
-test("Palpedia names use stable IDs and bilingual accent-insensitive search", () => {
+test("In-game names use stable IDs and bilingual accent-insensitive search", () => {
   const previous = getLocale();
   setLocale("fr");
   expect(gameName("Legend", "Legend")).toBe("Légende");
