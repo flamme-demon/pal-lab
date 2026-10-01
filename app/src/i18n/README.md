@@ -25,7 +25,21 @@ Preserve every numbered slot in partner rank templates, including repeated
 slots. The unit test checks these against the bundled game pack.
 
 French names and descriptions correspond to Palworld’s in-game terminology.
-The reference snapshot dates from 2026-09-30. Rights attribution is in the root
+The reference snapshot dates from 2026-09-30. Map item and landmark names were
+checked against the game files from Steam build 25246127 on 2026-10-01. EN/FR
+location rows are matched by their internal row keys; the dictionary also keeps
+the previous map names `Eternal Pyre Tower Entrance` and `Within the Seal` as
+aliases. It covers all named fast-travel points and towers, thirteen effigy
+item names, and the World Tree arena labels.
+
+Compose map statuses with translated names, for example
+`t("Tower · reached · {0}", [tr(name)])`. Translating an already-interpolated
+English sentence cannot look up its template or its game name independently.
+Canonical actor GUIDs, item IDs and save keys must remain unchanged. The unit
+test checks every named POI in the shipped map manifest and the browser smoke
+test checks live language switching of hover labels.
+
+Rights attribution is in the root
 `THIRD-PARTY-NOTICES.md`.
 
 Validation from `app/`:

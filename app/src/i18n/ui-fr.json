@@ -802,5 +802,14 @@
   "Scope:": "Joueur :",
   "Save reloaded": "Sauvegarde rechargée",
   "Something went wrong — the app kept running.": "Une erreur est survenue — l’application continue de fonctionner.",
-  "A background task failed — the app kept running.": "Une tâche en arrière-plan a échoué — l’application continue de fonctionner."
+  "A background task failed — the app kept running.": "Une tâche en arrière-plan a échoué — l’application continue de fonctionner.",
+  "{0} · collected": "{0} · collectée",
+  "{0}/{1} tracked towers reached": "{0}/{1} tours suivies atteintes",
+  "Tower · reached · {0}": "Tour · atteinte · {0}",
+  "Tower · {0}": "Tour · {0}",
+  "Bounty · {0}": "Prime · {0}",
+  "Bounty · defeated · {0}": "Prime · vaincu · {0}",
+  "Defeated": "Vaincu",
+  "Defeated / total": "Vaincus / total",
+  ", level {0}": ", niveau {0}"
 }

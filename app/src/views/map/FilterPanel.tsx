@@ -162,7 +162,7 @@ export default function FilterPanel({
           onToggle={() => setFilter("towers", !filters.towers)}
           label={t("Towers")}
           count={tw.joined ? `${tw.found}/${tw.total}` : String(tw.total)}
-          countTitle={tw.joined ? "Reached / tracked towers" : "Syndicate towers"}
+          countTitle={tw.joined ? t("{0}/{1} tracked towers reached", [tw.found, tw.total]) : "Syndicate towers"}
         />
       )}
       <Row

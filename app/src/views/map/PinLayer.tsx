@@ -259,7 +259,7 @@ function PinTypeIcon({
         grayscale={pin.found}
         dim={pin.found ? 0.45 : 1}
         glow={pin.found ? undefined : GREEN}
-        title={tr(pin.found ? "Lifmunk Effigy · collected" : "Lifmunk Effigy")}
+        title={pin.found ? t("{0} · collected", [tr(pin.name ?? "Lifmunk Effigy")]) : tr(pin.name ?? "Lifmunk Effigy")}
       />
     );
   }
@@ -281,11 +281,11 @@ function PinTypeIcon({
         dim={pin.found ? 0.8 : 1}
         glow={pin.found ? undefined : TOWER}
         title={
-          tr(pin.found
-            ? `Tower · reached${pin.name ? ` · ${pin.name}` : ""}`
-            : pin.name
-              ? `Tower · ${pin.name}`
-              : "Syndicate Tower")
+          pin.name
+            ? pin.found
+              ? t("Tower · reached · {0}", [tr(pin.name)])
+              : t("Tower · {0}", [tr(pin.name)])
+            : t("Syndicate Tower")
         }
       />
     );
@@ -298,7 +298,7 @@ function PinTypeIcon({
       mono={isMonoIcon(icons, "bounty")}
       tint={PURPLE}
       size={56}
-      title={tr(pin.name ? `Bounty · ${pin.name}` : "Bounty")}
+      title={pin.name ? t(pin.found ? "Bounty · defeated · {0}" : "Bounty · {0}", [tr(pin.name)]) : t("Bounty")}
     />
   );
 }
@@ -336,7 +336,7 @@ function AlphaPortrait({
 }
 
 /** The species-mode PalHoverCard context strip for an alpha pin. */
-function AlphaNote({ level }: { level?: number }) {
+function AlphaNote({ level, found }: { level?: number; found: boolean }) {
   useLocale();
   return (
     <span className="flex items-center gap-1.5">
@@ -350,6 +350,7 @@ function AlphaNote({ level }: { level?: number }) {
         className="h-[13px] w-[13px] shrink-0 object-contain"
       />
       <span className="font-semibold text-amber-bright">{t("Alpha Pal")}</span>
+      {found && <span className="text-ink">· {t("Defeated")}</span>}
       {level != null && (
         <>
           <span className="text-ink-faint">·</span>
@@ -386,7 +387,7 @@ function AlphaPin({
       onClick={() => pin.speciesId && onOpenSpecies(pin.speciesId)}
       className="group pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-amber"
       style={{ left, top }}
-      aria-label={t("Alpha Pal{0}", [pin.level != null ? `, level ${pin.level}` : ""])}
+      aria-label={t("Alpha Pal{0}", [pin.level != null ? t(", level {0}", [pin.level]) : ""]) + (pin.found ? ` · ${t("Defeated")}` : "")}
     >
       <span className="relative block transition-transform duration-150 ease-out" style={ZOOM_STYLE}>
         <AlphaPortrait speciesId={pin.speciesId ?? null} size={ALPHA_SIZE} />
@@ -410,7 +411,7 @@ function AlphaPin({
   // bare (still clickable) pin if it is somehow missing rather than crash.
   if (!pin.speciesId) return button;
   return (
-    <PalHoverCard speciesId={pin.speciesId} note={<AlphaNote level={pin.level} />}>
+    <PalHoverCard speciesId={pin.speciesId} note={<AlphaNote level={pin.level} found={pin.found} />}>
       {button}
     </PalHoverCard>
   );
@@ -621,7 +622,7 @@ function PinLayer({
               </span>
               {pin.name && (
                 <span className="pointer-events-none absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded-xs border border-line bg-panel/90 px-1.5 py-0.5 font-mono text-[9px] tracking-wide text-ink opacity-0 transition-opacity group-hover:opacity-100">
-                  {pin.name}
+                  {tr(pin.name)}
                 </span>
               )}
             </div>
