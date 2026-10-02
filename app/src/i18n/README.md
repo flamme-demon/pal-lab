@@ -62,3 +62,5 @@ node scripts/test-i18n.cjs http://localhost:1420
 
 `PAL_LAB_PLAYWRIGHT_MODULE` and `PAL_LAB_CHROMIUM` can select an existing
 Playwright installation and Chromium executable. They are optional.
+
+The game dictionary also contains the official French observation-tower names, outdoor NPC names and journal headings extracted from the installed game localization tables. Additional map-category, collection-status and clustering labels are included for the map coverage changes in the separate POI PR.
