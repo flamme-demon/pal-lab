@@ -15,17 +15,22 @@
 // back to the raw flag-set sizes (honest "you've unlocked N" rather than a
 // fabricated per-pin state).
 
-import type { MapData } from "../../lib/map-coords";
+import type { MapData, PoiCategory } from "../../lib/map-coords";
 import type { MapState } from "../../lib/types";
 import { baseSpeciesId } from "../../lib/map-data";
 
-export type PoiKind = "fast_travel" | "alpha" | "effigy" | "bounty" | "tower";
+export type PoiKind = "fast_travel" | "alpha" | "effigy" | "bounty" | "tower" | "poi";
 
 /** One resolved POI pin. `found` means unlocked, collected, or defeated;
  * towers retain their area-reached semantics. Missing save join keys stay
  * neutral. Completed POIs are known and can show through fog. */
 export interface PoiPin {
   key: string;
+  category?: string;
+  defaultVisible?: boolean;
+  recurring?: boolean;
+  tracked?: boolean;
+  detail?: string | null;
   kind: PoiKind;
   map: string;
   x: number;
@@ -48,6 +53,7 @@ export interface PoiPin {
  *  per-pin match was possible). `towers.joined` is independent: towers join on
  *  a per-POI `key` against the save's `towers_defeated`, absent on older data. */
 export interface PoiCounts {
+  categories?: (PoiCategory & { found: number; total: number; joined: boolean })[];
   fastTravel: { found: number; total: number };
   effigies: { found: number; total: number };
   effigyTypes: { id: string; name: string; icon: string; found: number; total: number; joined: boolean }[];
@@ -103,6 +109,7 @@ export function buildPois(
       bosses: data.bosses.filter(p => p.map === layer),
       bounties: data.bounties?.filter(p => p.map === layer),
       towers: data.towers?.filter(p => p.map === layer),
+      points_of_interest: data.points_of_interest?.filter(p => p.map === layer),
     };
   }
   const players = state?.players ?? [];
@@ -236,7 +243,30 @@ export function buildPois(
     });
   });
 
+  const categories = (data.poi_categories ?? []).map(c => ({ ...c, found: 0, total: 0, joined: false }));
+  const byCategory = new Map(categories.map(c => [c.id, c]));
+  const flags = new Map<string, Set<string>>();
+  for (const category of categories) {
+    if (!category.flag) continue;
+    flags.set(category.flag, unionFlags(players, scope, p =>
+      category.flag === "FastTravelPointUnlockFlag" ? p.fast_travel_unlocked : p.poi_flags?.[category.flag!] ?? []));
+    category.joined = players.some(p => (scope === "all" || p.uid === scope) &&
+      (category.flag === "FastTravelPointUnlockFlag" || p.poi_flags?.[category.flag!] !== undefined));
+  }
+  (data.points_of_interest ?? []).forEach((p, i) => {
+    const c = byCategory.get(p.category);
+    if (!c) return;
+    const tracked = c.joined && p.save_key != null;
+    const found = tracked && flags.get(c.flag!)?.has(p.save_key!) === true;
+    c.total++;
+    if (found) c.found++;
+    pins.push({ key: `poi${i}`, kind: "poi", category: c.id, map: p.map, x: p.x, y: p.y,
+      name: p.name ?? c.name, detail: p.detail, iconKey: c.icon, found, known: found,
+      defaultVisible: c.default_visible, recurring: c.recurring, tracked });
+  });
+
   const counts: PoiCounts = {
+    categories: categories.filter(c => c.total > 0),
     // With a live join the "found" tally is the number of pak pins whose guid a
     // scoped player has unlocked. Without guids it falls back to the raw
     // unlocked-flag count (clamped to the pak total so it never over-reports).
@@ -283,4 +313,27 @@ export function isEffigyVisible(pin: PoiPin, filters: {
   return filters.effigies
     && filters.effigyTypes?.[pin.effigyId ?? "Relic"] !== false
     && (!filters.hideUnfoundEffigies || pin.found);
+}
+
+/** Newly added categories follow their default until explicitly toggled. */
+export function isExtraPoiVisible(pin: PoiPin, categories?: Record<string, boolean>): boolean {
+  return categories?.[pin.category ?? ""] ?? pin.defaultVisible ?? false;
+}
+
+/** Aggregate dense optional layers in screen-space cells; retain every point in
+ * counts and leave sparse landmark/collectible layers unclustered. */
+export function clusterExtraPois<T extends { pin: PoiPin; left: number; top: number }>(points: T[], cellSize = 36): (T & { count: number })[] {
+  const buckets = new Map<string, T & { count: number }>();
+  const out: (T & { count: number })[] = [];
+  for (const p of points) {
+    if (p.pin.kind !== "poi" || p.pin.tracked || p.pin.defaultVisible) { out.push({ ...p, count: 1 }); continue; }
+    const key = `${p.pin.category}:${Math.floor(p.left / cellSize)}:${Math.floor(p.top / cellSize)}`;
+    const existing = buckets.get(key);
+    if (existing) {
+      existing.left = (existing.left * existing.count + p.left) / (existing.count + 1);
+      existing.top = (existing.top * existing.count + p.top) / (existing.count + 1);
+      existing.count++;
+    } else buckets.set(key, { ...p, count: 1 });
+  }
+  return [...out, ...buckets.values()];
 }

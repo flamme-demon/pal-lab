@@ -37,13 +37,14 @@ import { PalHoverCard } from "../../components/pal-hover-card";
 import { isRevealed, type FogMask } from "./fog";
 import {
   fallbackIcon,
+  extraPoiGlyph,
   iconUrl,
   isMonoIcon,
   markerFallback,
   type IconManifest,
 } from "./icons";
 import { alphaIconUrl, palIconUrl, UNKNOWN_ICON } from "../../lib/assets";
-import { isEffigyVisible, type PoiPin } from "./pins";
+import { isEffigyVisible, isExtraPoiVisible, clusterExtraPois, type PoiPin } from "./pins";
 
 /** Per-layer visibility toggles (persisted by MapView). `hideUnfoundEffigies`
  *  is a spoiler modifier on the effigy layer, not a layer of its own. */
@@ -53,6 +54,7 @@ export interface LayerFilters {
   effigies: boolean;
   /** Unlisted item ids default to visible (legacy saved filters). */
   effigyTypes?: Record<string, boolean>;
+  poiCategories?: Record<string, boolean>;
   bounties: boolean;
   towers: boolean;
   spawns: boolean;
@@ -289,6 +291,16 @@ function PinTypeIcon({
       />
     );
   }
+  if (pin.kind === "poi") {
+    const key = pin.iconKey ?? "unknown";
+    const entry = key === "marker_0" || pin.category === "merchant" || pin.category === "npc" ? undefined : icons?.[key];
+    const title = [pin.name, pin.detail ? pin.detail : null,
+      pin.tracked ? (pin.category === "watchtower" ? (pin.found ? "Unlocked" : "Locked") : (pin.found ? "Collected" : "Not collected")) : null,
+      pin.recurring ? "Potential spawn location" : null].filter(Boolean).join(" · ");
+    return <GlyphChip src={entry ? iconUrl(entry) : extraPoiGlyph(pin.category ?? "", pin.found ? DIM : CYAN)}
+      mono={entry ? isMonoIcon(icons, key) : false} tint={pin.found ? DIM : CYAN} size={32}
+      grayscale={pin.found} dim={pin.found ? 0.45 : 1} title={title} />;
+  }
   // bounty — purple-hooded colored art on a chip; name tooltip handled by caller.
   const entry = icons?.bounty ?? null;
   return (
@@ -488,12 +500,13 @@ function PinLayer({
       if (pin.kind === "effigy" && !isEffigyVisible(pin, filters)) continue;
       if (pin.kind === "bounty" && !filters.bounties) continue;
       if (pin.kind === "tower" && !filters.towers) continue;
+      if (pin.kind === "poi" && !isExtraPoiVisible(pin, filters.poiCategories)) continue;
       const [u, v] = worldToPx(entry, pin.x, pin.y);
       if (u < minU || u > maxU || v < minV || v > maxV) continue;
       if (spoilerHidden(pin.x, pin.y, pin.known)) continue;
       out.push({ pin, left: u * k, top: v * k });
     }
-    return out;
+    return clusterExtraPois(out);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pois, layer, k, bx, by, vw, vh, filters, fog, fogOn, showHidden, entry]);
 
@@ -593,7 +606,7 @@ function PinLayer({
           );
         })}
 
-        {visiblePois.map(({ pin, left, top }) =>
+        {visiblePois.map(({ pin, left, top, count }) =>
           pin.kind === "alpha" ? (
             <AlphaPin
               key={pin.key}
@@ -614,10 +627,12 @@ function PinLayer({
                 style={pin.kind === "tower" ? ZOOM_STYLE : DIM_STYLE}
               >
                 <PinTypeIcon pin={pin} icons={icons} />
+                {count > 1 && <span title={`${count} locations · zoom in to separate`}
+                  className="absolute -right-2 -top-2 rounded-full border border-line bg-panel px-1 font-mono text-[10px] text-ink">{count}</span>}
               </span>
               {pin.name && (
                 <span className="pointer-events-none absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap rounded-xs border border-line bg-panel/90 px-1.5 py-0.5 font-mono text-[9px] tracking-wide text-ink opacity-0 transition-opacity group-hover:opacity-100">
-                  {pin.name}
+                  {pin.name}{pin.detail ? ` · ${pin.detail}` : ""}
                 </span>
               )}
             </div>

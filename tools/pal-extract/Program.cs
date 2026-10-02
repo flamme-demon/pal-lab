@@ -18,7 +18,7 @@ using SkiaSharp;
 
 namespace PalExtract;
 
-static class Program
+static partial class Program
 {
     // Override when extracting a newer installed build; retain the legacy default.
     static readonly string GameBuild = Environment.GetEnvironmentVariable("PALCALC_GAME_BUILD") ?? "24181527";
@@ -41,6 +41,7 @@ static class Program
 
     static int Main(string[] args)
     {
+        if (args.Contains("--check-map-transforms")) return CheckMapTransforms();
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
         OodleHelper.DownloadOodleDll();
@@ -68,6 +69,22 @@ static class Program
         if (args.Contains("--discover-bounty-actors")) { DiscoverBountyActors(provider); return 0; }
         if (args.Contains("--list-dt")) { ListDataTables(provider); return 0; }
         if (args.Contains("--dump-table")) { DumpTable(provider, args); return 0; }
+        if (args.Contains("--audit-map-pois")) { AuditMapPois(provider); return 0; }
+        if (args.Contains("--export-extra-map")) return ExportExtraMap(provider);
+        if (args.Contains("--dump-assets")) {
+            var rx = new Regex(args[Array.IndexOf(args, "--dump-assets") + 1], RegexOptions.IgnoreCase);
+            foreach (var file in provider.Files.Values.Where(f => f.Path.EndsWith(".uasset") && rx.IsMatch(f.Path))) {
+                if (!provider.TryLoadPackage(file, out var pkg)) continue;
+                var log = new System.Text.StringBuilder(); log.AppendLine("ASSET " + file.Path);
+                for (int i=0; i<pkg.ExportMapLength; i++) {
+                    var ptr=new FPackageIndex(pkg, i+1).ResolvedObject;
+                    if (ptr?.Name.Text.StartsWith("Default__") == true || ptr?.Class?.Name.Text.Contains("Drop") == true) { log.AppendLine(ptr.Name.Text); DumpStruct(ptr.Object.Value, log, "  "); }
+                }
+                Console.Write(log.ToString());
+            }
+            return 0;
+        }
+        if (args.Contains("--list-assets")) { var rx = new Regex(args[Array.IndexOf(args, "--list-assets") + 1], RegexOptions.IgnoreCase); foreach (var path in provider.Files.Keys.Where(p => rx.IsMatch(p))) Console.WriteLine(path); return 0; }
         if (args.Contains("--export-map-icons")) return ExportMapIcons(provider);
 
         var monsters = provider.LoadPackageObject<UDataTable>("Pal/Content/Pal/DataTable/Character/DT_PalMonsterParameter");
@@ -1747,6 +1764,39 @@ static class Program
     }
 
 
+    // Inspect gameplay POIs separately from decorative meshes and dungeon interiors.
+    static void AuditMapPois(IFileProvider provider)
+    {
+        var rx = new Regex(@"(small_tower|Tower02|MainTower|DungeonPortalMarker|DungeonFixedEntrance|NPCSpawner|FishingSpot|GoddessStatue|HealSpring|ItemPickupTower|OilField|SkylandWarp|WarpAltar|PalMapObjectSpawner|palegg|MapPoint|Ruins|Camp|Arena|Note|Journal|Predator)", RegexOptions.IgnoreCase);
+        var seen = new Dictionary<string, int>();
+        var log = new System.Text.StringBuilder();
+        foreach (var f in provider.Files.Keys.Where(p => Regex.IsMatch(p, @"(watchtower|observation|locationtype|compass|mapicon|oilrig|merchant|dungeon.*area|map.*location)", RegexOptions.IgnoreCase) && p.EndsWith(".uasset")))
+            log.AppendLine("ASSET " + f);
+        foreach (var gf in provider.Files.Values.Where(f => f.Path.EndsWith(".umap") && f.Path.Contains("Pal/Content/Pal/Maps/MainWorld_5/")))
+        {
+            if (!provider.TryLoadPackage(gf, out var pkg)) continue;
+            for (int i = 0; i < pkg.ExportMapLength; i++)
+            {
+                var ptr = new FPackageIndex(pkg, i + 1).ResolvedObject;
+                var cls = ptr?.Class?.Name.Text;
+                if (cls == null || !rx.IsMatch(cls)) continue;
+                int count = seen.GetValueOrDefault(cls) + 1; seen[cls] = count;
+                if (count > (cls.Contains("tower", StringComparison.OrdinalIgnoreCase) ? 30 : 2)) continue;
+                var actor = ptr.Object?.Value;
+                if (actor == null) continue;
+                log.AppendLine($"ACTOR {cls} {ptr.Name.Text} {gf.Path}");
+                DumpStruct(actor, log, "  ");
+                var root = actor.GetOrDefault<FPackageIndex>("RootComponent");
+                var comp = root != null && root.IsExport ? root.Load() : null;
+                if (comp != null) { log.AppendLine("  ROOT"); DumpStruct(comp, log, "    "); }
+            }
+        }
+        foreach (var kv in seen.OrderBy(k => k.Key)) log.AppendLine($"COUNT {kv.Key} {kv.Value}");
+        var output = Path.GetFullPath(Path.Combine(OutDir, "..", "..", "..", "testdata", "probe", "poi-audit.log"));
+        File.WriteAllText(output, log.ToString());
+        Console.WriteLine($"[poi-audit] {seen.Count} classes -> {output}");
+    }
+
     // `--list-dt`: write every DataTable asset path to testdata/probe/datatables.log (grep target).
     static void ListDataTables(IFileProvider provider)
     {
@@ -1794,6 +1844,9 @@ static class Program
             case null:
                 sb.AppendLine("null");
                 break;
+            case FScriptStruct script when script.StructType is FStructFallback inner:
+                DumpValue(inner, sb, indent);
+                break;
             case FStructFallback s:
                 sb.AppendLine("{");
                 DumpStruct(s, sb, indent + "    ");
@@ -1839,6 +1892,12 @@ static class Program
         ("fast_travel", "Pal/Content/Pal/Texture/UI/InGame/T_icon_compass_FTtower"),   // eagle statue (diamond-framed)
         ("tower",       "Pal/Content/Pal/Texture/UI/InGame/T_icon_compass_tower"),     // tower spire (diamond-framed)
         ("dungeon",     "Pal/Content/Pal/Texture/UI/InGame/T_icon_compass_dungeon"),   // cave archway
+        ("watchtower",  "Pal/Content/Pal/Texture/UI/InGame/T_icon_compass_FTUnlockMap"),
+        ("enemy_camp",  "Pal/Content/Pal/Texture/UI/InGame/T_icon_compass_EnemyCamp"),
+        ("oilrig",      "Pal/Content/Pal/Texture/UI/InGame/T_icon_compass_Oilrig"),
+        ("junk",        "Pal/Content/Pal/Texture/UI/InGame/T_icon_compass_Search_Junk"),
+        ("treasure",    "Pal/Content/Pal/Texture/UI/InGame/T_icon_compass_Search_Treasure"),
+        ("portal",      "Pal/Content/Pal/Texture/UI/InGame/T_icon_compass_Teleport"),
         ("bounty",      "Pal/Content/Pal/Texture/UI/InGame/T_icon_compass_Bounty"),    // purple hooded figure
         ("base",        "Pal/Content/Pal/Texture/UI/InGame/T_icon_compass_camp"),      // fortress/castle (player base)
         ("alpha_badge", "Pal/Content/Pal/Texture/UI/Map/T_prt_map_BossIconFrame"),     // white ring/frame drawn around boss pins (tint in UI)

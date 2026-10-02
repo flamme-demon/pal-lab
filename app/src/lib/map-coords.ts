@@ -99,6 +99,22 @@ export interface TowerPoint {
   key?: string | null;
 }
 
+/** Static outdoor gameplay categories extracted from placed game actors. */
+export interface PoiCategory {
+  id: string;
+  name: string;
+  icon: string;
+  group: string;
+  default_visible: boolean;
+  flag?: string | null;
+  recurring?: boolean;
+}
+export interface ExtraPoiPoint extends PoiPoint {
+  category: string;
+  save_key?: string | null;
+  detail?: string | null;
+}
+
 /** The whole `map-data.json` document. Wave 2 consumes every pin array; the
  *  optional `bounties` is appended by IconExtract only if bounty POI locations
  *  are found in the paks (contract C1), so it may be absent. */
@@ -115,6 +131,8 @@ export interface MapData {
   /** Syndicate-tower landmarks (Map Wave 3, TowerData/T1). Absent on data
    *  extracted before towers were added; the UI degrades to no tower layer. */
   towers?: TowerPoint[];
+  poi_categories?: PoiCategory[];
+  points_of_interest?: ExtraPoiPoint[];
 }
 
 /**

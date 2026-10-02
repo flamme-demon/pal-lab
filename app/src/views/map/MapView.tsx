@@ -70,6 +70,7 @@ const DEFAULT_FILTERS: LayerFilters = {
   alpha: true,
   effigies: true,
   effigyTypes: {},
+  poiCategories: {},
   bounties: true,
   towers: true,
   spawns: true,
@@ -708,7 +709,7 @@ export default function MapView() {
     [commitGesture],
   );
 
-  const setFilter = useCallback((key: Exclude<keyof LayerFilters, "effigyTypes">, on: boolean) => {
+  const setFilter = useCallback((key: Exclude<keyof LayerFilters, "effigyTypes" | "poiCategories">, on: boolean) => {
     setFilters((f) => ({ ...f, [key]: on }));
   }, []);
 
@@ -801,6 +802,7 @@ export default function MapView() {
                     filters={filters}
                     setFilter={setFilter}
                     setEffigyType={(id, on) => setFilters(f => ({ ...f, effigyTypes: { ...f.effigyTypes, [id]: on } }))}
+                    setPoiCategory={(id, on) => setFilters(f => ({ ...f, poiCategories: { ...f.poiCategories, [id]: on } }))}
                     icons={icons}
                     counts={counts}
                     hasBounties={hasBounties}

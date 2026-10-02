@@ -67,6 +67,7 @@ export default function FilterPanel({
   filters,
   setFilter,
   setEffigyType,
+  setPoiCategory,
   icons,
   counts,
   hasBounties,
@@ -79,8 +80,9 @@ export default function FilterPanel({
   setShowHidden,
 }: {
   filters: LayerFilters;
-  setFilter: (key: Exclude<keyof LayerFilters, "effigyTypes">, on: boolean) => void;
+  setFilter: (key: Exclude<keyof LayerFilters, "effigyTypes" | "poiCategories">, on: boolean) => void;
   setEffigyType: (id: string, on: boolean) => void;
+  setPoiCategory: (id: string, on: boolean) => void;
   icons: IconManifest | null;
   counts: PoiCounts;
   hasBounties: boolean;
@@ -190,6 +192,18 @@ export default function FilterPanel({
           countTitle={tw.joined ? `${tw.found}/${tw.total} tracked towers reached` : "Syndicate towers"}
         />
       )}
+      {[...new Set((counts.categories ?? []).map(c => c.group))].map(group => (
+        <div key={group} className="mt-2 border-t border-line-soft pt-1">
+          <div className="px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-ink-faint">{group}</div>
+          {(counts.categories ?? []).filter(c => c.group === group).map(c => {
+            const on = filters.poiCategories?.[c.id] ?? c.default_visible;
+            return <Row key={c.id} on={on} onToggle={() => setPoiCategory(c.id, !on)} label={c.name}
+              count={c.joined ? `${c.found}/${c.total}` : String(c.total)}
+              countTitle={c.joined ? "Collected / unlocked / total" : c.recurring ? "Potential spawn locations" : "Static locations"} />;
+          })}
+        </div>
+      ))}
+      {(counts.categories?.length ?? 0) > 0 && <p className="px-2 py-2 font-mono text-[9px] text-ink-faint">{"Resources and loot mark potential spawn locations. Nearby markers are grouped; zoom in for details."}</p>}
       <Row
         on={filters.spawns}
         onToggle={() => setFilter("spawns", !filters.spawns)}

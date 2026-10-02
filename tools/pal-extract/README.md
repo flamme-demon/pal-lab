@@ -186,3 +186,7 @@ rendered layers; they remain separate feature work. Tower reachability only
 tracks six region keys; keyless landmarks display neutrally without inventing
 completion flags. The filter's tower count includes all landmarks, with tracked
 reachability shown in its tooltip.
+
+## Additional outdoor points of interest
+
+`--export-extra-map` extends an existing map manifest from the same game build with additional gameplay categories. See the [coverage audit](../../docs/map-poi-audit.md) for counts, exact save keys, parent-transform handling and runtime/interior exclusions. `--check-map-transforms` validates coordinate composition without loading game assets; `--audit-map-pois` writes a read-only actor/property inventory.
