@@ -72,6 +72,11 @@ test("published outdoor map covers the audited categories without internal templ
   expect(stone.length).toBe(7789);
   const stonePositions = new Set(stone.map(p => `${p.x}:${p.y}:${p.z}`));
   expect(chromite.every(p => !stonePositions.has(`${p.x}:${p.y}:${p.z}`))).toBe(true);
+  const springs = points.filter(p => p.category === "healing");
+  expect(springs.length).toBe(3);
+  expect(springs.every(p => p.map === "Tree" && p.detail === "Teafant spring" && !p.save_key)).toBe(true);
+  const springCategory = categories.find(c => c.id === "healing")!;
+  expect([springCategory.name, springCategory.group, springCategory.default_visible, springCategory.recurring]).toEqual(["World Tree Holy Water", "Resources", false, true]);
   const ids = new Set(categories.map(c => c.id));
   expect(points.every(p => ids.has(p.category) && Number.isFinite(p.x) && Number.isFinite(p.y) && p.z! >= -20000)).toBe(true);
   expect(new Set(points.map(p => `${p.category}:${Math.round(p.x*10)}:${Math.round(p.y*10)}:${Math.round(p.z!*10)}`)).size).toBe(points.length);

@@ -22,7 +22,8 @@ static partial class Program
         new("arena", "Arena", "enemy_camp", "Landmarks"),
         new("portal", "Teleportation altars", "portal", "Landmarks"),
         new("statue", "Statues of Power", "marker_0", "Landmarks"),
-        new("healing", "Healing springs", "marker_0", "Landmarks"),
+        // Keep the existing filter ID so saved spring visibility is preserved.
+        new("healing", "World Tree Holy Water", "marker_0", "Resources", false, null, true),
         new("sanctuary", "Wildlife sanctuaries", "enemy_camp", "Landmarks"),
         new("starting_point", "Starting points", "fast_travel", "Landmarks"),
         new("ancient_lava", "Ancient lava deposits", "marker_0", "Resources", false, null, true),
@@ -206,9 +207,23 @@ static partial class Program
             }
         }
         if (!dropsChromite) throw new InvalidDataException("Chromite blueprint no longer drops Chromium; inspect before publishing.");
+        var springItems = Default("BP_LevelObject_HealSpring_C")?.Properties.FirstOrDefault(p=>p.Name.Text=="ObtainItemInfos")?.Tag?.GenericValue
+            as CUE4Parse.UE4.Assets.Objects.UScriptArray;
+        bool givesHolyWater = springItems?.Properties.Any(p=> {
+            var row=AsStruct(p.GenericValue);
+            var item=AsStruct(row?.Properties.FirstOrDefault(p=>p.Name.Text=="StaticItemId")?.Tag?.GenericValue);
+            return item?.Properties.FirstOrDefault(p=>p.Name.Text=="Key")?.Tag?.GenericValue?.ToString()=="WorldTreeHolyWater";
+        }) == true;
+        if (!givesHolyWater) throw new InvalidDataException("Spring reward changed; inspect before publishing a holy-water source.");
         var points = new List<object>(); var seen = new HashSet<(string, long, long, long)>();
         var audit = new System.Text.StringBuilder(); var audited = new HashSet<string>();
         var translations = new SortedDictionary<string, string>(); int unresolved = 0, outside = 0, duplicates = 0, interiors = 0;
+        var itemEn = LoadText(provider, "Pal/Content/L10N/en/Pal/DataTable/Text/DT_ItemNameText_Common");
+        var itemFr = LoadText(provider, "Pal/Content/L10N/fr/Pal/DataTable/Text/DT_ItemNameText_Common");
+        if (!itemEn.TryGetValue("ITEM_NAME_WorldTreeHolyWater",out var holyWaterEn) || !itemFr.TryGetValue("ITEM_NAME_WorldTreeHolyWater",out var holyWaterFr)
+            || Clean(holyWaterEn) != definitions["healing"].name)
+            throw new InvalidDataException("Holy-water item localization changed; inspect before publishing.");
+        translations[Clean(holyWaterEn)] = Clean(holyWaterFr);
         var counts = new SortedDictionary<string, int>();
         foreach (var file in provider.Files.Values.Where(f => f.Path.EndsWith(".umap", StringComparison.OrdinalIgnoreCase) && f.Path.Contains("Pal/Content/Pal/Maps/MainWorld_5/", StringComparison.OrdinalIgnoreCase)).OrderBy(f => f.Path, StringComparer.Ordinal)) {
             if (!provider.TryLoadPackage(file, out var pkg)) continue;
@@ -269,13 +284,14 @@ static partial class Program
                 }
                 if (category == "fishing" && cls.Contains("Rare")) detail="Rare fishing spot";
                 if (category == "chromite") detail="Reveal with a Metal Detector or Smokie";
+                if (category == "healing") detail="Teafant spring";
                 var def=definitions[category];
                 if (!seen.Add((category, (long)Math.Round(x*10), (long)Math.Round(y*10), (long)Math.Round(z*10)))) { duplicates++; continue; }
                 points.Add(new { x=Math.Round(x,2), y=Math.Round(y,2), z=Math.Round(z,2), map, category, name, detail, guid, save_key=saveKey });
                 counts[category]=counts.GetValueOrDefault(category)+1;
             }
         }
-        if (counts.GetValueOrDefault("watchtower") != 22 || counts.GetValueOrDefault("dungeon") != 170 || counts.GetValueOrDefault("shrine") != 106 || counts.GetValueOrDefault("journal") != 64 || counts.GetValueOrDefault("skill_fruit") != 43 || counts.GetValueOrDefault("chromite") != 257)
+        if (counts.GetValueOrDefault("watchtower") != 22 || counts.GetValueOrDefault("dungeon") != 170 || counts.GetValueOrDefault("shrine") != 106 || counts.GetValueOrDefault("journal") != 64 || counts.GetValueOrDefault("skill_fruit") != 43 || counts.GetValueOrDefault("chromite") != 257 || counts.GetValueOrDefault("healing") != 3)
             throw new InvalidDataException("Static landmark/collectible count changed; inspect extraction before publishing: " + JsonConvert.SerializeObject(counts));
         doc["poi_categories"] = JArray.FromObject(ExtraCategories.Where(c=>counts.ContainsKey(c.id)));
         doc["points_of_interest"] = JArray.FromObject(points, JsonSerializer.Create(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));

@@ -15,7 +15,7 @@ The map manifest was audited against the placed world-partition actors and data 
 | Arena | 1 | 0 | 1 |
 | Teleportation altars | 21 | 1 | 22 |
 | Statues of Power | 4 | 0 | 4 |
-| Healing springs | 0 | 3 | 3 |
+| World Tree Holy Water (Teafant springs) | 0 | 3 | 3 |
 | Wildlife sanctuaries | 3 | 0 | 3 |
 | Starting points | 8 | 0 | 8 |
 | Ancient lava deposits | 10 | 0 | 10 |
@@ -71,6 +71,12 @@ Names, journal headings and icon references come from the game's own English/Fre
 The misleadingly named `BP_PalMapObjectSpawner_RockStone18_C` uses `MapObjectId.Key = DamagableRock0018`; that resource blueprint’s `DropItemParameter` contains `StaticItemId.Key = Chromium`. The exporter validates both links before publishing. Its 415 placed actors comprise **257 world-map locations** on Feybreak (including its physically placed caves) and 158 internal dungeon-template placements below the exterior cutoff. Only the 257 world-map locations are emitted, in a separate optional **Chromite deposits** resource layer. They were previously misclassified as stone; stone now contains 7,789 points, and the total location count remains unchanged.
 
 These are potential, recurring deposits. Their tooltip explains that a Metal Detector or Smokie reveals them in game. Detection and mining do not mark a deposit permanently completed in the companion; no per-player collected state is inferred. Generated dungeon interiors are still excluded rather than plotted at their internal template coordinates.
+
+## World Tree Holy Water sources
+
+The three placed `BP_LevelObject_HealSpring_C` actors are Teafant springs. Their native `ObtainItemInfos` reward contains `StaticItemId.Key = WorldTreeHolyWater`; the exporter validates this reward and the native English/French item names. Their filter now appears in **Resources**, labeled **World Tree Holy Water**, instead of the generic Healing springs landmark label. The existing `healing` filter ID is retained to preserve saved visibility settings, and the droplet glyph remains. All three belong to the World Tree; no extra or duplicate points are introduced. Springs are recurring resource sources with neutral availability, rather than permanently completed collectibles.
+
+Pal drops, fishing rewards and generated dungeon loot are additional acquisition methods, but are not represented as fixed holy-water deposits.
 
 ## Reproducing extraction
 
