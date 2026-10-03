@@ -35,6 +35,7 @@ static partial class Program
         new("coal", "Coal deposits", "marker_0", "Resources", false, null, true),
         new("sulfur", "Sulfur deposits", "marker_0", "Resources", false, null, true),
         new("quartz", "Pure quartz deposits", "marker_0", "Resources", false, null, true),
+        new("chromite", "Chromite deposits", "marker_0", "Resources", false, null, true),
         new("stone", "Stone deposits", "marker_0", "Resources", false, null, true),
         new("paldium", "Paldium deposits", "marker_0", "Resources", false, null, true),
         new("nightstar", "Nightstar sand", "marker_0", "Resources", false, null, true),
@@ -87,6 +88,9 @@ static partial class Program
         if (suffix.StartsWith("Treasure_")) return "chest";
         if (suffix.StartsWith("Junk_") || suffix == "DogCoin_C") return "junk";
         if (suffix.StartsWith("Lotus_")) return "lotus";
+        // This misleadingly named spawner uses DamagableRock0018, whose native
+        // DropItemParameter contains Chromium. Check before the ordinary stones.
+        if (suffix == "RockStone18_C") return "chromite";
         if (suffix.StartsWith("RockStone")) return "stone";
         return suffix switch {
             "RockCopper_C" => "ore", "RockCoal_C" => "coal", "Sulfur_C" => "sulfur",
@@ -180,11 +184,28 @@ static partial class Program
             defaults[cls] = result; return result;
         }
         string Key(UObject actor, string cls, string prop) {
-            var raw = actor.Properties.FirstOrDefault(p => p.Name.Text == prop)?.Tag?.GenericValue
+            var raw = actor?.Properties.FirstOrDefault(p => p.Name.Text == prop)?.Tag?.GenericValue
                 ?? Default(cls)?.Properties.FirstOrDefault(p => p.Name.Text == prop)?.Tag?.GenericValue;
             var s = AsStruct(raw);
             return s == null ? raw?.ToString() : s.Properties.FirstOrDefault(p => p.Name.Text == "Key")?.Tag?.GenericValue?.ToString();
         }
+        // Verify the resource's identity from native blueprint data, rather than
+        // trusting the RockStone18 name across game builds.
+        if (Key(Default("BP_PalMapObjectSpawner_RockStone18_C"), "BP_PalMapObjectSpawner_RockStone18_C", "MapObjectId") != "DamagableRock0018")
+            throw new InvalidDataException("Chromite spawner identity changed; inspect before publishing.");
+        if (!blueprintFiles.TryGetValue("BP_MapObject_DamagableRock0018_C", out var chromiteFile) || !provider.TryLoadPackage(chromiteFile, out var chromitePackage))
+            throw new InvalidDataException("Chromite resource blueprint is missing.");
+        bool dropsChromite = false;
+        for (int i=0; i<chromitePackage.ExportMapLength; i++) {
+            var obj = new FPackageIndex(chromitePackage, i+1).ResolvedObject?.Object?.Value;
+            if (obj?.Properties.FirstOrDefault(p=>p.Name.Text=="DropItems")?.Tag?.GenericValue is not CUE4Parse.UE4.Assets.Objects.UScriptArray drops) continue;
+            foreach (var drop in drops.Properties) {
+                var row = AsStruct(drop.GenericValue);
+                var item = AsStruct(row?.Properties.FirstOrDefault(p=>p.Name.Text=="StaticItemId")?.Tag?.GenericValue);
+                if (item?.Properties.FirstOrDefault(p=>p.Name.Text=="Key")?.Tag?.GenericValue?.ToString() == "Chromium") dropsChromite = true;
+            }
+        }
+        if (!dropsChromite) throw new InvalidDataException("Chromite blueprint no longer drops Chromium; inspect before publishing.");
         var points = new List<object>(); var seen = new HashSet<(string, long, long, long)>();
         var audit = new System.Text.StringBuilder(); var audited = new HashSet<string>();
         var translations = new SortedDictionary<string, string>(); int unresolved = 0, outside = 0, duplicates = 0, interiors = 0;
@@ -247,13 +268,14 @@ static partial class Program
                     if (cls.Contains("MedalTrader")) { category="merchant"; name="Medal Merchant"; }
                 }
                 if (category == "fishing" && cls.Contains("Rare")) detail="Rare fishing spot";
+                if (category == "chromite") detail="Reveal with a Metal Detector or Smokie";
                 var def=definitions[category];
                 if (!seen.Add((category, (long)Math.Round(x*10), (long)Math.Round(y*10), (long)Math.Round(z*10)))) { duplicates++; continue; }
                 points.Add(new { x=Math.Round(x,2), y=Math.Round(y,2), z=Math.Round(z,2), map, category, name, detail, guid, save_key=saveKey });
                 counts[category]=counts.GetValueOrDefault(category)+1;
             }
         }
-        if (counts.GetValueOrDefault("watchtower") != 22 || counts.GetValueOrDefault("dungeon") != 170 || counts.GetValueOrDefault("shrine") != 106 || counts.GetValueOrDefault("journal") != 64 || counts.GetValueOrDefault("skill_fruit") != 43)
+        if (counts.GetValueOrDefault("watchtower") != 22 || counts.GetValueOrDefault("dungeon") != 170 || counts.GetValueOrDefault("shrine") != 106 || counts.GetValueOrDefault("journal") != 64 || counts.GetValueOrDefault("skill_fruit") != 43 || counts.GetValueOrDefault("chromite") != 257)
             throw new InvalidDataException("Static landmark/collectible count changed; inspect extraction before publishing: " + JsonConvert.SerializeObject(counts));
         doc["poi_categories"] = JArray.FromObject(ExtraCategories.Where(c=>counts.ContainsKey(c.id)));
         doc["points_of_interest"] = JArray.FromObject(points, JsonSerializer.Create(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));

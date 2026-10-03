@@ -57,11 +57,21 @@ test("published outdoor map covers the audited categories without internal templ
   const points = data.points_of_interest ?? [];
   const categories = data.poi_categories ?? [];
   expect(points.length).toBe(38272);
-  expect(categories.length).toBe(36);
+  expect(categories.length).toBe(37);
   expect(points.filter(p => p.category === "watchtower").map(p => p.map).sort()).toEqual([...Array(20).fill("MainMap"), "Tree", "Tree"]);
   expect(points.filter(p => p.category === "dungeon").length).toBe(170);
   expect(points.filter(p => p.category === "skill_fruit").length).toBe(43);
   expect(points.filter(p => p.category === "shrine").length).toBe(106);
+  const chromite = points.filter(p => p.category === "chromite");
+  expect(chromite.length).toBe(257);
+  expect(chromite.every(p => p.map === "MainMap" && p.detail === "Reveal with a Metal Detector or Smokie" && !p.save_key)).toBe(true);
+  const category = categories.find(c => c.id === "chromite")!;
+  expect([category.name, category.group, category.default_visible, category.recurring]).toEqual(["Chromite deposits", "Resources", false, true]);
+  // RockStone18 is chromite, so those points must not also count as stone.
+  const stone = points.filter(p => p.category === "stone");
+  expect(stone.length).toBe(7789);
+  const stonePositions = new Set(stone.map(p => `${p.x}:${p.y}:${p.z}`));
+  expect(chromite.every(p => !stonePositions.has(`${p.x}:${p.y}:${p.z}`))).toBe(true);
   const ids = new Set(categories.map(c => c.id));
   expect(points.every(p => ids.has(p.category) && Number.isFinite(p.x) && Number.isFinite(p.y) && p.z! >= -20000)).toBe(true);
   expect(new Set(points.map(p => `${p.category}:${Math.round(p.x*10)}:${Math.round(p.y*10)}:${Math.round(p.z!*10)}`)).size).toBe(points.length);

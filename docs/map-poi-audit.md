@@ -28,7 +28,8 @@ The map manifest was audited against the placed world-partition actors and data 
 | Coal deposits | 520 | 0 | 520 |
 | Sulfur deposits | 280 | 0 | 280 |
 | Pure quartz deposits | 523 | 0 | 523 |
-| Stone deposits | 8046 | 0 | 8046 |
+| Chromite deposits | 257 | 0 | 257 |
+| Stone deposits | 7789 | 0 | 7789 |
 | Paldium deposits | 1173 | 0 | 1173 |
 | Nightstar sand | 271 | 0 | 271 |
 | Hexolite quartz deposits | 349 | 0 | 349 |
@@ -59,11 +60,17 @@ Only true flags count. Gray pins and found/total counters respect the selected p
 
 Attached components store local coordinates. The extractor resolves every parent transform, including scale and Unreal pitch/yaw/roll, before publishing world positions. Translation, rotation, nonuniform scale and nested-parent calculations are checked by `--check-map-transforms`.
 
-The world package also contains dungeon and combat arena templates tens of thousands of units below the exterior. These internal scenes are excluded (`Z < -20,000`), along with dungeon-only fishing/shop actors, decorative child towers, duplicate placements and destination-only portal actors. The published manifest has **38,272 additional exterior locations in 36 categories**. A complete actor-class inventory and read-only property audit are available through `--audit-map-pois`.
+The world package also contains dungeon and combat arena templates tens of thousands of units below the exterior. These internal scenes are excluded (`Z < -20,000`), along with dungeon-only fishing/shop actors, decorative child towers, duplicate placements and destination-only portal actors. The published manifest has **38,272 additional exterior locations in 37 categories**. A complete actor-class inventory and read-only property audit are available through `--audit-map-pois`.
 
-Resources, eggs, chests, loot, fishing and merchant locations identify potential spawn sites. They do not guarantee that an object or NPC is currently present. Underground chromite, meteorite/supply drops, roaming encounters and other runtime placements are not assigned invented fixed coordinates. Dungeon opening/respawn state and quest-phase availability are not inferred from static actors. Player-constructed objects are represented by the existing save-based base layer rather than static game placements. Terrain meshes, vegetation decoration, lights, volumes and interior encounter components are not gameplay POI pins.
+Resources, eggs, chests, loot, fishing and merchant locations identify potential spawn sites. They do not guarantee that an object or NPC is currently present. Meteorite/supply drops, roaming encounters and other runtime placements are not assigned invented fixed coordinates. Dungeon opening/respawn state and quest-phase availability are not inferred from static actors. Player-constructed objects are represented by the existing save-based base layer rather than static game placements. Terrain meshes, vegetation decoration, lights, volumes and interior encounter components are not gameplay POI pins.
 
-Names, journal headings and icon references come from the game's own English/French localization, item, NPC and blueprint tables. Resource identity was checked against blueprint item drops: `NightStone` means **Nightstar Sand**, `DamagableRock0003` drops **Pure Quartz**, `DamagableRock0019` drops **Hexolite Quartz**, and `DamagableRock0022` drops **Ancient Lava**.
+Names, journal headings and icon references come from the game's own English/French localization, item, NPC and blueprint tables. Resource identity was checked against blueprint item drops: `NightStone` means **Nightstar Sand**, `DamagableRock0003` drops **Pure Quartz**, `DamagableRock0018` drops **Chromite**, `DamagableRock0019` drops **Hexolite Quartz**, and `DamagableRock0022` drops **Ancient Lava**.
+
+## Chromite identity and coverage
+
+The misleadingly named `BP_PalMapObjectSpawner_RockStone18_C` uses `MapObjectId.Key = DamagableRock0018`; that resource blueprint’s `DropItemParameter` contains `StaticItemId.Key = Chromium`. The exporter validates both links before publishing. Its 415 placed actors comprise **257 world-map locations** on Feybreak (including its physically placed caves) and 158 internal dungeon-template placements below the exterior cutoff. Only the 257 world-map locations are emitted, in a separate optional **Chromite deposits** resource layer. They were previously misclassified as stone; stone now contains 7,789 points, and the total location count remains unchanged.
+
+These are potential, recurring deposits. Their tooltip explains that a Metal Detector or Smokie reveals them in game. Detection and mining do not mark a deposit permanently completed in the companion; no per-player collected state is inferred. Generated dungeon interiors are still excluded rather than plotted at their internal template coordinates.
 
 ## Reproducing extraction
 
