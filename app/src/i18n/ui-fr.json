@@ -874,5 +874,17 @@
   "Starting points": "Points de départ",
   "Treasure chests and loot": "Coffres au trésor et butin",
   "Reveal with a Metal Detector or Smokie": "À révéler avec un détecteur de métaux ou Smokie",
-  "Teafant spring": "Source de Teafant"
+  "Teafant spring": "Source de Teafant",
+  "Show Alpha locations": "Afficher les Alphas",
+  "Show {0} Alpha locations on the world map": "Afficher les emplacements Alpha de {0} sur la carte du monde",
+  "Encounter type": "Type de rencontre",
+  "Wild spawns": "Apparitions sauvages",
+  "Wild and Alpha": "Sauvages et Alphas",
+  "Spawn period": "Période d’apparition",
+  "All times": "Jour et nuit",
+  "Day": "Jour",
+  "Night": "Nuit",
+  "Spawns without a time restriction remain visible during both day and night.": "Les apparitions sans restriction horaire restent visibles de jour comme de nuit.",
+  "{0} wild · {1} Alpha": "{0} sauvages · {1} Alphas",
+  "No locations for this map and period": "Aucun emplacement sur cette carte à cette période"
 }

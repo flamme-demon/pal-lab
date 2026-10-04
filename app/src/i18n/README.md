@@ -64,3 +64,7 @@ node scripts/test-i18n.cjs http://localhost:1420
 Playwright installation and Chromium executable. They are optional.
 
 The game dictionary also contains the official French observation-tower names, outdoor NPC names and journal headings extracted from the installed game localization tables. Additional map-category, collection-status and clustering labels are included for the map coverage changes in the separate POI PR.
+
+Map encounter controls also include the wild/Alpha selector, day/night periods,
+Alpha profile links and the empty-location message used by the separate map
+coverage change. Interpolated wild/Alpha counts retain both numbered slots.
